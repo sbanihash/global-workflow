@@ -456,7 +456,7 @@ class GEFSTasks(Tasks):
         task = rocoto.create_task(member_metatask_dict)
 
         return task
-
+   
     def wavepostpnt(self):
         deps = []
         dep_dict = {'type': 'metatask', 'name': f'gefs_fcst_mem#member#'}
@@ -485,7 +485,6 @@ class GEFSTasks(Tasks):
                      'log': f'{self.rotdir}/logs/@Y@m@d@H/{task_name}.log',
                      'maxtries': '&MAXTRIES;'
                      }
-
         member_var_dict = {'member': ' '.join([str(mem).zfill(3) for mem in range(0, self.nmem + 1)])}
         member_metatask_dict = {'task_name': 'gefs_wave_post_pnt',
                                 'task_dict': task_dict,
@@ -556,8 +555,8 @@ class GEFSTasks(Tasks):
         if self.options['do_wave']:
             dep_dict = {'type': 'metatask', 'name': 'gefs_wave_post_grid'}
             deps.append(rocoto.add_dependency(dep_dict))
-            dep_dict = {'type': 'metatask', 'name': 'gefs_wave_post_pnt'}
-            deps.append(rocoto.add_dependency(dep_dict))
+            #dep_dict = {'type': 'metatask', 'name': 'gefs_wave_post_pnt'}
+            #deps.append(rocoto.add_dependency(dep_dict))
             if self.options['do_wave_bnd']:
                 dep_dict = {'type': 'metatask', 'name': 'gefs_wave_post_bndpnt'}
                 deps.append(rocoto.add_dependency(dep_dict))
@@ -585,6 +584,31 @@ class GEFSTasks(Tasks):
 
         return task
 
+    def wavestat(self):
+        deps = []
+        if self.options['do_wave']:
+            dep_dict = {'type': 'metatask', 'name': 'gefs_wave_post_grid'}
+            deps.append(rocoto.add_dependency(dep_dict))
+        dependencies = rocoto.create_dependency(dep=deps, dep_condition='and')
+
+        resources = self.get_resource('wavestat')
+        task_name = 'gefs_wavestat'
+        task_dict = {'task_name': task_name,
+                     'resources': resources,
+                     'envars': self.envars,
+                     'cycledef': 'gefs',
+                     'dependency': dependencies,
+                     'command': f'{self.HOMEgfs}/jobs/rocoto/wavestat.sh',
+                     'job_name': f'{self.pslot}_{task_name}_@H',
+                     'log': f'{self.rotdir}/logs/@Y@m@d@H/{task_name}.log',
+                     'maxtries': '&MAXTRIES;'
+                     }
+
+        task = rocoto.create_task(task_dict)
+
+        return task
+
+    
     def cleanup(self):
         deps = []
         dep_dict = {'type': 'task', 'name': 'gefs_arch'}

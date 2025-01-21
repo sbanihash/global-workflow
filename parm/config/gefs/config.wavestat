@@ -1,0 +1,18 @@
+#! /usr/bin/env bash
+
+########## config.wavestat ##########
+# Wave steps specific
+
+echo "BEGIN: config.wavestat"
+
+# Get task specific resources
+. $EXPDIR/config.resources wavestat
+
+# Step label
+export sigMODE=${sigMODE:-init}
+
+# Options for point output (switch on/off boundary point output)
+> export DO_WAVESTAT='YES'
+
+
+echo "END: config.wavestat"
