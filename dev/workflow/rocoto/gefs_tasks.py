@@ -550,7 +550,7 @@ class GEFSTasks(Tasks):
     def wave_stat(self):
         deps = []
         for member in range(0, self.nmem + 1):
-            task = f'gefs_wave_post_grid_mem{member:03d}_#fhr_label#'
+            task = f'{self.run}_wave_post_grid_mem{member:03d}_#fhr_label#'
             dep_dict = {'type': 'task', 'name': task}
             deps.append(rocoto.add_dependency(dep_dict))
         dependencies = rocoto.create_dependency(dep_condition='and', dep=deps)
@@ -576,7 +576,7 @@ class GEFSTasks(Tasks):
         largest_group = max([len(grp.split(',')) for grp in fhr_var_dict['fhr_list'].split(' ')])
         resources['walltime'] = Tasks.multiply_HMS(resources['walltime'], largest_group)
 
-        task_name = f'gefs_wave_stat_#fhr_label#'
+        task_name = f'{self.run}_wave_stat_#fhr_label#'
         task_dict = {'task_name': task_name,
                      'resources': resources,
                      'dependency': dependencies,
@@ -607,7 +607,7 @@ class GEFSTasks(Tasks):
         wave_stat_pnt_envars = self.envars.copy()
         resources = self.get_resource('wave_stat')
 
-        task_name = f'gefs_wave_stat_pnt'
+        task_name = f'{self.run}_wave_stat_pnt'
         task_dict = {'task_name': task_name,
                      'resources': resources,
                      'dependency': dependencies,
