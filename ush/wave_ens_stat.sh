@@ -28,83 +28,82 @@ prepar=`echo $para | rev | cut -c2- | rev` #Part prefix (assumes 1 digit index)
 paridx=`echo $para | rev | cut -c-1`  #Part index (assumes 1 digit index)
 
 # Number of grib records
-ngrib=$2
 
 # Number of ensemble members
 nmembn=`echo ${membn} | wc -w`
 
 # Forecast range
-fhr=$3
-grdname=$5
+fhr=$2
+grdname=$4
 
-mkdir -p tmp_${para}
-cd tmp_${para}
+mkdir -p "tmp_${para}"
+cd "tmp_${para}" || exit
 
 # 0.b Set general parameter settings
 
 scale='     '
 case $prepar in
     HTSG)   ascale=(0.60 1.00 2.00  3.00  4.00  5.50  7.00  9.00) ;
-             scale=${ascale[@]}
+             scale="${ascale[@]}"
              npart=0 ;
              nip='hs' ;
              nnip=${nip} ;
              parcode='10 0 3'  ;;
     PERP)   ascale=(5.0 7.0 9.0 11.0 13.0 15.0 17.0 19.0) ;
-             scale=${ascale[@]}
+             scale="${ascale[@]}"
              npart=0 ;
              nip='tp' ;
              nnip=${nip} ;
              parcode='10 0 11'  ;;
     DIRP)   ascale='0' ;
-             scale=${ascale[@]}
+             scale="${ascale[@]}"
              npart=0 ;
              nip='pdir' ;
              nnip=${nip} ;
              parcode='10 0 10'  ;;
     WIN)    ascale=(3.60 5.65 8.74 11.31 14.39 17.48 21.07 24.67) ;
-             scale=${ascale[@]}
+             scale="${ascale[@]}"
              npart=0 ;
              nip='wnd' ;
              nnip=${nip} ;
              parcode='0 2 1'  ;;
     WDI)    ascale='0' ;
-             scale=${ascale[@]}
+             scale="${ascale[@]}"
              npart=0 ;
              nip='wnddir' ;
              nnip=${nip} ;
              parcode='0 2 0'  ;;
     WVHG)   ascale=(0.60 1.00 2.00  3.00  4.00  5.50  7.00  9.00) ;
-             scale=${ascale[@]}
+             scale="${ascale[@]}"
              npart=0 ;
              nip='wshs' ;
              nnip=${nip} ;
              parcode='10 0 5'  ;;
     WVPE)   ascale=(5.0 7.0 9.0 11.0 13.0 15.0 17.0 19.0) ;
-             scale=${ascale[@]}
+             scale="${ascale[@]}"
              npart=0 ;
              nip='wstp' ;
              nnip=${nip} ;
              parcode='10 0 6'  ;;
     WVDI)   ascale='0' ;
-             scale=${ascale[@]}
+             scale="${ascale[@]}"
              npart=0 ;
              nip='wsdir' ;
              nnip=${nip} ;
              parcode='10 0 4'  ;;
     SWELL)  ascale=(0.60 1.00 2.00  3.00  4.00  5.50  7.00  9.00) ;
-             scale=${ascale[@]}
+             scale="${ascale[@]}"
              npart=1 ;
              nip='hswell' ;
              nnip="${nip}"$paridx ;
              parcode='10 0 8'  ;;
     SWPER)  ascale=(5.0 7.0 9.0 11.0 13.0 15.0 17.0 19.0) ;
-             scale=${ascale[@]}
+             scale="${ascale[@]}"
              npart=1 ;
              nip='tswell' ;
              nnip="${nip}"$paridx ;
              parcode='10 0 9'  ;;
-    *)       ascale=${tsscale[@]} ; scale=${ascale[$plev]} ; parcode='   '  ;;
+    *)       ascale=("${tsscale[@]}") ; scale="${ascale[$plev]}" ; parcode='   '  ;;
 esac
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --+ + + ++
@@ -117,7 +116,6 @@ rm -f "mean.t${cyc}z.grib2" "spread.t${cyc}z.grib2" "prob.t${cyc}z.grib2"
 
 nmemb=${nmembn}
 nmembm1=$(( nmemb - 1 ))
-
   
 #
 # 1.a Create list of combined ensemble member numbers (starting from 00 = NCEP control run)
@@ -128,8 +126,8 @@ export memid=""
 for i in $(seq -f "%02g" 0 $nmembm1); do memid="$memid $i"; done
 #
 fhr3=$(printf %03i ${fhr})
-valid_time=$(date -u -d "${PDY} ${cyc} + ${fhr} hours" "+%Y%m%d%H")
-ymdh_init=$(date -u -d "${valid_time:0:8} ${valid_time:8:2} - ${WAVHINDH} hours" "+%Y%m%d%H")
+valid_time="$(date -u -d "${PDY} ${cyc} + ${fhr} hours" "+%Y%m%d%H")"
+ymdh_init="$(date -u -d "${valid_time:0:8} ${valid_time:8:2} - ${WAVHINDH} hours" "+%Y%m%d%H")"
 
 mkdir "${valid_time}"
 cd "${valid_time}" || exit 1
@@ -140,7 +138,7 @@ rm -f "wave_stat.inp" "data_*"
 # 1.b Loop through members
 nme=0
 #    while [ ${nme} -lt ${nmemb} ]
-for im in ${memid}; do
+for im in "${memid}"; do
   infile="../../${para}_0${im}.t${cyc}z.${grdname}.f${fhr3}.grib2"
   echo "infile: ${infile}"
   if [ "${im}" = "00" ]
@@ -165,7 +163,7 @@ for im in ${memid}; do
   fi
 
 # 1.b.3 Create binary file for input to wave_stat FORTRAN executable
-  $WGRIB2 "$infile"  -vt -match "${ymdh_init}" -bin "data_${im}"
+  ${WGRIB2} "$infile"  -vt -match "${ymdh_init}" -bin "data_${im}"
   ok1=$?
 
 # 1.b.4 Check for errors
@@ -182,37 +180,37 @@ done
 #
 # 1.c Execute wave_stat and create grib2 files
 #
-rm -f mean_out spread_out prob_out test_out
+rm -f "mean_out" "spread_out" "prob_out" "test_out"
 #
-    ${EXECgfs}/wave_stat.x  < wave_stat.inp >>$pgmout 2>&1
+    "${EXECgfs}/wave_stat.x"  < wave_stat.inp >>"$pgmout" 2>&1
 #
 # 1.d Check for errors and move output files to tagged grib2 parameter-hour files
-if [[ ! -f mean_out ]]
+if [ ! -f "mean_out" ]
 then
   set +x
   export err=1
-  err_exit "ABNORMAL EXIT: ERR mean_out not gerenerated for ${nnip} $fhr3."
+  err_exit "mean_out not gerenerated for ${nnip} $fhr3."
 else
-  mv -f mean_out    ${nnip}_mean.${fhr3}.grib2
+  mv -f "mean_out" "${nnip}_mean.${fhr3}.grib2"
 fi
-if [[ ! -f spread_out ]]
+if [ ! -f "spread_out" ]
 then
   set +x
   export err=1
-  err_exit "ABNORMAL EXIT: ERR spread_out not gerenerated for ${nnip} $fhr3."
+  err_exit "spread_out not gerenerated for ${nnip} $fhr3."
 else
-  mv -f spread_out  ${nnip}_spread.$fhr3.grib2
+  mv -f "spread_out"  "${nnip}_spread.$fhr3.grib2"
 fi
 
-nscale=`echo ${ascale[@]} | wc -w`
-if [[ ${nscale} -gt 1 ]]
+nscale=${#ascale[@]}
+if [ "${nscale}" -gt 1 ]
 then
-  if [[ ! -f prob_out ]]
+  if [ ! -f "prob_out" ]
   then
     export err=1
-    err_exit "ABNORMAL EXIT: ERR prob_out not gerenerated for ${nnip} ${fhr3}."
+    err_exit "prob_out not gerenerated for ${nnip} ${fhr3}."
   else
-    mv -f prob_out  "${nnip}_prob.${fhr3}.grib2"
+    mv -f "prob_out"  "${nnip}_prob.${fhr3}.grib2"
   fi
 fi
 
