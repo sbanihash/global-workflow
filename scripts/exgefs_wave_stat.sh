@@ -52,7 +52,6 @@ nmembn=$(( nens + 1 ))
 #
 # Initialize the array
 membn_array=()
-
 # Populate the array (the seq output is split by whitespace and added to the array)
 for i in $(seq -f "%03g" 0 "${nens}"); do
     membn_array+=("$i")
@@ -76,16 +75,16 @@ fi
 #
 # 0.c Time management
 #
-fhr3=$(printf %03i ${FORECAST_HOUR})
+fhr3=$(printf '%03i' ${FORECAST_HOUR})
 valid_time=$(date -u -d "${PDY} ${cyc} + ${FORECAST_HOUR} hours" "+%Y%m%d%H")
 ymdh_init=$(date -u -d "${valid_time:0:8} ${valid_time:8:2} - ${WAVHINDH} hours" "+%Y%m%d%H")
 
-fcmdnow=cmdfile.${fhr3}
+fcmdnow="cmdfile.${fhr3}"
 
 mkdir -p "output_${ymdh_init}" # Use -p to avoid errors if it already exists
 cd "output_${ymdh_init}" || exit 1
 
-rm -f ${fcmdnow}
+rm -f "${fcmdnow}"
 touch "${fcmdnow}"
 
 # 0.d Parameter selection and deployment of arrays
@@ -96,27 +95,22 @@ ASWPER=(SWPER1 SWPER2 SWPER3) # Indices of PERIODS from partitions
 ASWDIR=(SWDIR1 SWDIR2 SWDIR3) # Indices of PERIODS from partitions
 export arrpar=(HTSGW PERPW ICEC IMWF MWSPER DIRPW WVHGT WVPER WVDIR WWSDIR WIND WDIR "${ASWELL[@]}" "${ASWDIR[@]}" "${ASWPER[@]}")
 
-nparam=$(echo "${arrpar[@]}" | wc -w)
-
+nparam=${#arrpar[@]}
 export nparam
 
 #
 # 1. Get Input files for current script 
 #
-
-#
 # 1.a Link grib2 data for all members
 #
-ngrib=0
-inc=$FHOUT_HF_WAV
+inc=${FHOUT_HF_WAV}
 ftype="mem"
       
-ngrib=$(( ngrib + 1 ))
 for me in ${membn}; do
   ENSTAG=${ftype}${me}
   cpfile=${ROTDIR}/${RUN}.${PDY}/${cyc}/${ENSTAG}/products/wave/gridded/${grdNAME}/${RUN}.${cycle}.${grdNAME}.f${fhr3}.grib2
   if [ -s "${cpfile}" ] ; then
-    ln -s  "$cpfile"  "./${RUN}.${cycle}.${ENSTAG}.${grdNAME}.f${fhr3}.grib2"
+    ln -s  "${cpfile}"  "./${RUN}.${cycle}.${ENSTAG}.${grdNAME}.f${fhr3}.grib2"
   else
     export err=2
     err_exit "No ${cpfile} copied."
@@ -189,7 +183,6 @@ if [[ ${err} -ne 0 ]]; then
   err_exit "run_mpmd.sh failed!"
 fi
 
-
 #
 # 2. Generate ensemble mean, spread and probability files
 # 
@@ -208,8 +201,8 @@ do
     echo " Parameter $nip not yet available in grib2 library "
   else
 # Line for doing per parameter, per time stamp
-    echo "nip ngrib FORECAST_HOUR: ${nip}, ${ngrib}, ${FORECAST_HOUR}"
-    echo " ${HOMEgfs}/ush/wave_ens_stat.sh ${nip} ${ngrib} ${FORECAST_HOUR} 1 ${grdNAME} " >> cmdfile
+    echo "nip  FORECAST_HOUR: ${nip},  ${FORECAST_HOUR}"
+    echo " ${HOMEgfs}/ush/wave_ens_stat.sh ${nip}  ${FORECAST_HOUR} 1 ${grdNAME} " >> cmdfile
   fi
   iparam=$(( iparam + 1))
 done
@@ -226,7 +219,6 @@ fi
 
 # Regroup all outputs in parameter/stats files
 # Regrouping has to be sequential per parameter, per hour
-
 
 iparam=1
 
@@ -264,16 +256,15 @@ do
       "${iparam}" -eq 10  ||  "${iparam}" -eq 15  ||  "${iparam}" -eq 16  || \
       "${iparam}" -eq 17  ||  "${iparam}" -eq 18  ||  "${iparam}" -eq 21 ]]
   then
-    echo " Parameter $nip not yet available in grib2 library "
+    echo " Parameter ${nip} not yet available in grib2 library "
   else
 # 2.e Cleanup base parameter files per member
-    rm -f ${nip}_??.t${cyc}z.grib2
+    rm -f "${nip}_??.t${cyc}z.grib2"
 
     for stype in ${stypes}; do
-      ingrib=${snip}_${stype}.${fhr3}.grib2
-      outgrib=${RUN}.t${cyc}z.${stype}.${grdNAME}.f${fhr3}.grib2
-      echo "$WGRIB2  ./${par_dir}/${valid_time}/${ingrib} -append -grib ./${outgrib} " >> ${stype}.ncmdfile
-
+      ingrib="${snip}_${stype}.${fhr3}.grib2"
+      outgrib="${RUN}.t${cyc}z.${stype}.${grdNAME}.f${fhr3}.grib2"
+      echo "$WGRIB2  ./${par_dir}/${valid_time}/${ingrib} -append -grib ./${outgrib} " >> "${stype}.ncmdfile"
     done
 
   fi
@@ -298,15 +289,14 @@ done
 # 3 Check if buoy input files exist and copy
 # #
 #
-buoyfile=wave_${NET}.buoys
+buoyfile="wave_${NET}.buoys"
 if [ -s ${PARMgfs}/wave/${buoyfile} ] ; then
-  cp  ${PARMgfs}/wave/${buoyfile} buoy_file.data
-  echo " ${PARMgfs}/wave/${buoyfile} copied to buoy_file.data."
+  cp  "${PARMgfs}/wave/${buoyfile}" buoy_file.data
+  echo "${PARMgfs}/wave/${buoyfile} copied to buoy_file.data."
 else
   export err=2
   err_exit "No ${PARMgfs}/wave/${buoyfile} copied."
 fi
-
 											      
 # 3.a Buoy locations file massaging
 
@@ -321,7 +311,6 @@ ibuoy=1
 
 # 3.c Create bundled grib2 file with all parameters
 
-
 cat ${RUN}.t${cyc}z.{mean,prob,spread}.${grdNAME}.f${fhr3}.grib2 | $WGRIB2 - -match "(HTSGW|PERPW|WIND)" -grib gribfile > gribfile.out 2>&1
 
 if [ -s gribfile ]
@@ -332,17 +321,17 @@ else
   err_exit "No gribfile created for ${TYPE}, no bulls"
 fi
 
-rm -f ${fcmdnow}
-touch ${fcmdnow}
+rm -f "${fcmdnow}"
+touch "${fcmdnow}"
 
 # 3.d Loop through buoys and populate cmdfiles with calls to wave_ens_bull.sh
 ifile=0
 while [ ${ibuoy} -le ${nbuoys} ]
 do
-  bline=`sed ''$ibuoy'!d' buoy.file`
-  blat=`echo ${bline} | awk '{print $2}'`
-  blon=`echo ${bline} | awk '{print $1}'`
-  bnom=`echo ${bline} | awk '{print $3}' | sed "s/'//g"`
+  bline=$(sed -n "${ibuoy}p" buoy.file || true)
+  blat=$(awk '{print $2}' <<<"${bline}" || true)
+  blon=$(awk '{print $1}' <<<"${bline}" || true)
+  bnom=$(awk '{print $3}' <<<"${bline}" | sed "s/'//g" || true)
 
   echo "${HOMEgfs}/ush/wave_ens_bull.sh ${blon} ${blat} ${bnom} ${FORECAST_HOUR} 2>&1 | tee  bull_${bnom}.out" >> "${fcmdnow}"
 
@@ -359,16 +348,16 @@ if [ ${CFP_MP:-"NO"} = "NO" ]; then
   ifile=0
   iline=1
   ifirst='yes'
-  nlines=$( wc -l ${fcmdnow} | awk '{print $1}' )
-  while [ ${iline} -le ${nlines} ]; do
-    line=$( sed -n ''$iline'p' ${fcmdnow} )
+  nlines=$(wc -l < "${fcmdnow}")
+  while [ "${iline}" -le "${nlines}" ]; do
+    line=$(sed -n "${iline}p" "${fcmdnow}" || true)
     if [ -z "$line" ]; then
       break
     else
       if [ "$ifirst" = 'yes' ]; then
-	echo "#!/bin/sh" > "cmdmfile.$nfile"
+	    echo "#!/bin/sh" > "cmdmfile.$nfile"
         echo " ${DATA}/output_${ymdh_init}/cmdmfile.${nfile}" >> cmdmprog
-	chmod 744 "cmdmfile.${nfile}"
+	    chmod 744 "cmdmfile.${nfile}"
       fi
       echo $line >> "cmdmfile.${nfile}"
       nfile=$(( nfile + 1 ))
@@ -384,15 +373,15 @@ fi
 echo "   Executing the wave_ens_bull scripts at : $(date)"
   
 ncmds=$(wc -l < cmdmprog)
-if [[ ${NTASKS} -lt ${ncmds} ]]; then
- if [[ "${USE_CFP:-}" = "YES" ]]; then
+if [ "${NTASKS}" -lt "${ncmds}" ]; then
+ if [ "${USE_CFP:-}" = "YES" ]; then
    echo "WARNING: Not enough processors for MPMD, '${NTASKS} < ${ncmd}', running in serial mode"
    export USE_CFP="NO"
  fi
 fi
 "${USHgfs}/run_mpmd.sh" "cmdmprog"
 export err=$?
-if [[ ${err} -ne 0 ]]; then
+if [ "${err}" -ne 0 ]; then
   err_exit "run_mpmd.sh failed!"
 fi
 
@@ -403,16 +392,15 @@ ibuoy=1
 # 3.f Check for errors
 while (( ibuoy <= nbuoys ))
 do
+  bline=$(sed -n "${ibuoy}p" buoy.file || true)
+  blat=$(awk '{print $2}' <<<"${bline}" || true)
+  blon=$(awk '{print $1}' <<<"${bline}" || true)
+  bnom=$(awk '{print $3}' <<<"${bline}" | sed "s/'//g" || true)
 
-  bline=$(sed "${ibuoy}!d" buoy.file)
-  blat=`echo ${bline} | awk '{print $2}'`
-  blon=`echo ${bline} | awk '{print $1}'`
-  bnom=`echo ${bline} | awk '{print $3}' | sed "s/'//g"`
-
-  if [ ! -s ${RUN}.${bnom}.f${fhr3}.bull ]
+  if [ ! -s "${RUN}.${bnom}.f${fhr3}.bull" ]
   then
     export err=9
-    err_exit "ABNORMAL EXIT: ERR in generating bulettin file,  No ${RUN}.${bnom}.bull file created"
+    err_exit "ERR in generating bulettin file,  No ${RUN}.${bnom}.bull file created"
   else
     echo -e "\n Bulletin file ${RUN}.${bnom}.${fhr3}.bull generated succesfully.\n"
     rm -f bull_${bnom}.out
@@ -420,52 +408,49 @@ do
   ibuoy=$(( ibuoy + 1 ))
 done
 
-tar cf ${RUN}.t${cyc}z.f${fhr3}.bull_tar ${RUN}.*.f*.bull
-rm -f ${RUN}.*.bull
-tar cf ${RUN}.t${cyc}z.f${fhr3}.station_tar ${RUN}.*.f*.ts
-rm -f ${RUN}.*.ts
+tar -cf "${RUN}.t${cyc}z.f${fhr3}.bull_tar" ${RUN}.*.f*.bull || true
+rm -f ${RUN}.*.bull || true
+tar -cf "${RUN}.t${cyc}z.f${fhr3}.station_tar" ${RUN}.*.f*.ts || true
+rm -f ${RUN}.*.ts || true
 
 # 4.a Output all grib2 parameter files to COMOUT
 
 MEMDIR="ensstat" GRID=${wavepostGRD} YMD=${PDY} HH=${cyc} declare_from_tmpl COMOUT_WAVE_GRID_ENS:COM_WAVE_GRID_TMPL
 
-
-for stype in mean spread prob
-do
-  fcopy=${RUN}.t${cyc}z.${stype}.${grdNAME}.f${fhr3}.grib2
-  if [[ -s ${fcopy} ]]
+for stype in mean spread prob; do
+  fcopy="${RUN}.t${cyc}z.${stype}.${grdNAME}.f${fhr3}.grib2"
+  if [ -s "${fcopy}" ]
   then
-    echo "   Copying ${fcopy} to ensstat and ALERT if SENDDBN=YES"
-    cp -f ${fcopy}  "${COMOUT_WAVE_GRID_ENS}"
+    echo "Copying ${fcopy} to ensstat and ALERT if SENDDBN=YES"
+    cpfs "${fcopy}"  "${COMOUT_WAVE_GRID_ENS}"
 # 2.g Alert DBN
-    if [[ "$SENDDBN" = 'YES' ]]
+    if [ "$SENDDBN" = 'YES' ]
     then
-      MODCOM=$(echo ${NET}_${COMPONENT} | tr '[a-z]' '[A-Z]')
-      $DBNROOT/bin/dbn_alert MODEL ${MODCOM}_GB2 $job ${ROTDIR}/${RUN}.${PDY}/${cyc}/${ENSTAG}/products/wave/gridded/${fcopy}
+      MODCOM="${NET}_${COMPONENT^^}"
+      "$DBNROOT/bin/dbn_alert" MODEL "${MODCOM}_GB2" "${job}" "${ROTDIR}/${RUN}.${PDY}/${cyc}/${ENSTAG}/products/wave/gridded/${fcopy}"
     fi
   else
     export err=6
-    err_exit "ERROR: ${modIE} fcst ${date} ${cycle}: ${fcopy} not fouund."
+    err_exit "${modIE} fcst ${date} ${cycle}: ${fcopy} not found."
   fi
 done
 
-
 # 4.b Output all station and bull tars to COMOUT (TO DO: this should go somewhere else)
 #
-bcopy_station=${RUN}.t${cyc}z.f${fhr3}.station_tar
-bcopy_bull=${RUN}.t${cyc}z.f${fhr3}.bull_tar
-if [[ -s "$bcopy_station" ]] && [[ -s "$bcopy_bull" ]]; then
+bcopy_station="${RUN}.t${cyc}z.f${fhr3}.station_tar"
+bcopy_bull="${RUN}.t${cyc}z.f${fhr3}.bull_tar"
+if [ -s "${bcopy_station}" ] && [ -s "${bcopy_bull}" ]; then
   echo "   Copying tar files to ensstat"
-  cp -f ${bcopy_station}  "${COMOUT_WAVE_STATION_ENS}"
-  cp -f ${bcopy_bull}  "${COMOUT_WAVE_STATION_ENS}"
+  cpfs "${bcopy_station}"  "${COMOUT_WAVE_STATION_ENS}"
+  cpfs "${bcopy_bull}"  "${COMOUT_WAVE_STATION_ENS}"
 else
   export err=6
-  err_exit "${modIE} fcst ${date} ${cycle}: ${bcopy_station} and ${bcopy_bull} not fouund."
+  err_exit "${modIE} fcst ${date} ${cycle}: ${bcopy_station} and ${bcopy_bull} not found."
 fi
 
-echo "$job completed normally"
+echo "${job} completed normally"
 #
-echo "Ending at : `date`"
+echo "Ending at :$(date)"
 #
 # END
 #
